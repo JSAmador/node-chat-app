@@ -15,13 +15,23 @@ var io = socketIO(server);
 var users = new Users();
 app.use(express.static(publicPath));
 
+//Starting the conexion with Sockets
+
 io.on('connection', (socket) => {
   console.log('New User connected');
 
+  // Join a new Room
+  
   socket.on('join', (params, callback) => {
+    
+    // Exceptions
+    
     if(!isRealString(params.name) || !isRealString(params.room)) {
       return callback('Name and room are required');
     }
+    
+    //Success
+    
     socket.join(params.room);
     users.removeUser(socket.id);
     users.addUser(socket.id, params.name, params.room);
@@ -32,6 +42,8 @@ io.on('connection', (socket) => {
     callback();
   });
 
+  //Message creator
+  
   socket.on('createMessage', (message, callback) => {
     var user = users.getUser(socket.id);
     if(user && isRealString(message.text)) {
@@ -40,6 +52,8 @@ io.on('connection', (socket) => {
     callback();
 
   });
+  
+  // Locations creator
 
   socket.on('createLocationMessage', (coords) => {
     var user = users.getUser(socket.id);
@@ -47,9 +61,14 @@ io.on('connection', (socket) => {
       io.to(user.room).emit('newLocationMessage', generateLocationMessage(user.name, coords.latitude, coords.longitude));
     }
   });
+  
+  // Emails creator
+  
   socket.on('createEmail', (newEmail) => {
     console.log('createEmail', newEmail);
   });
+  
+  // Log out
 
   socket.on('disconnect', () => {
     var user = users.removeUser(socket.id);
@@ -60,6 +79,7 @@ io.on('connection', (socket) => {
   });
 });
 
+// Check runing
 
 server.listen(port, () => {
   console.log(`Server is up at port ${port}`);
